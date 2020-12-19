@@ -26,31 +26,31 @@ public class ZipFileManager {
     }
 
     public void createZip(Path source) throws Exception {
-        // Проверяем, существует ли директория, где будет создаваться архив
-        // При необходимости создаем ее
+        // Check directory existing
+        // if need - creating directory
         Path zipDirectory = zipFile.getParent();
         if (Files.notExists(zipDirectory))
             Files.createDirectories(zipDirectory);
 
-        // Создаем zip поток
+        // Creating zip stream
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(zipFile))) {
 
             if (Files.isDirectory(source)) {
-                // Если архивируем директорию, то нужно получить список файлов в ней
+                // if archive directory, we need list of files
                 FileManager fileManager = new FileManager(source);
                 List<Path> fileNames = fileManager.getFileList();
 
-                // Добавляем каждый файл в архив
+                // add every file to archive
                 for (Path fileName : fileNames)
                     addNewZipEntry(zipOutputStream, source, fileName);
 
             } else if (Files.isRegularFile(source)) {
 
-                // Если архивируем отдельный файл, то нужно получить его директорию и имя
+                // if archive file, it needs name and directory
                 addNewZipEntry(zipOutputStream, source.getParent(), source.getFileName());
             } else {
 
-                // Если переданный source не директория и не файл, бросаем исключение
+                // Throw exception if not a file or directory
                 throw new PathIsNotFoundException();
             }
         }
@@ -67,14 +67,14 @@ public class ZipFileManager {
             if (Files.notExists(outputFolder))
                 Files.createDirectories(outputFolder);
 
-            // Проходимся по содержимому zip потока (файла)
+            // Content of archive zip stream
             ZipEntry zipEntry = zipInputStream.getNextEntry();
 
             while (zipEntry != null) {
                 String fileName = zipEntry.getName();
                 Path fileFullName = outputFolder.resolve(fileName);
 
-                // Создаем необходимые директории
+                // Creating directories
                 Path parent = fileFullName.getParent();
                 if (Files.notExists(parent))
                     Files.createDirectories(parent);
@@ -92,12 +92,12 @@ public class ZipFileManager {
     }
 
     public void removeFiles(List<Path> pathList) throws Exception {
-        // Проверяем существует ли zip файл
+        // Existence of zip file
         if (!Files.isRegularFile(zipFile)) {
             throw new WrongZipFileException();
         }
 
-        // Создаем временный файл
+        // Creating tmp Files
         Path tempZipFile = Files.createTempFile(null, null);
 
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(tempZipFile))) {
@@ -124,7 +124,7 @@ public class ZipFileManager {
             }
         }
 
-        // Перемещаем временный файл на место оригинального
+        // Move tmp files intead of original
         Files.move(tempZipFile, zipFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
@@ -133,12 +133,12 @@ public class ZipFileManager {
     }
 
     public void addFiles(List<Path> absolutePathList) throws Exception {
-        // Проверяем существует ли zip файл
+        // Check existence of zip file
         if (!Files.isRegularFile(zipFile)) {
             throw new WrongZipFileException();
         }
 
-        // Создаем временный файл
+        // Creating tmp files
         Path tempZipFile = Files.createTempFile(null, null);
         List<Path> archiveFiles = new ArrayList<>();
 
@@ -160,7 +160,7 @@ public class ZipFileManager {
                 }
             }
 
-            // Архивируем новые файлы
+            // Archive new files
             for (Path file : absolutePathList) {
                 if (Files.isRegularFile(file)) {
                     if (archiveFiles.contains(file.getFileName()))
@@ -174,12 +174,12 @@ public class ZipFileManager {
             }
         }
 
-        // Перемещаем временный файл на место оригинального
+        // Move tmp files intead of original
         Files.move(tempZipFile, zipFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
     public List<FileProperties> getFilesList() throws Exception {
-        // Проверяем существует ли zip файл
+        // Check zip file existence
         if (!Files.isRegularFile(zipFile)) {
             throw new WrongZipFileException();
         }
@@ -190,8 +190,6 @@ public class ZipFileManager {
             ZipEntry zipEntry = zipInputStream.getNextEntry();
 
             while (zipEntry != null) {
-                // Поля "размер" и "сжатый размер" не известны, пока элемент не будет прочитан
-                // Давайте вычитаем его в какой-то выходной поток
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 copyData(zipInputStream, baos);
 
